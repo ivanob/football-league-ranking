@@ -3,22 +3,29 @@ import TableRankingActor.CalculateTable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+import akka.util.ByteString
+import com.typesafe.config.ConfigFactory
 
 class TableRankingActor extends Actor {
   import akka.pattern.pipe
   import context.dispatcher
   final implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
   val http = Http(context.system)
+  val config = ConfigFactory.load()
+  val url = config.getString("football-stats-api.http.url")
+  val token = config.getString("football-stats-api.http.token")
 
   def receive = {
     case CalculateTable => {
       println("Enter in CalculateTable")
-      http.singleRequest(HttpRequest(uri = "http://akka.io")).pipeTo(self)
+      http.singleRequest(HttpRequest(uri = url+"1181?api_token="+token)).pipeTo(self)
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) => {
       println("response received")
       println(headers)
-      println(entity)
+      entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+        println("Got response, body: " + body.utf8String)
+      }
     }
   }
 }
