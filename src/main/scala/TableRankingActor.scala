@@ -5,6 +5,7 @@ import akka.http.scaladsl.Http
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.ConfigFactory
+import scala.util.parsing.json._
 
 class TableRankingActor extends Actor {
   import akka.pattern.pipe
@@ -22,9 +23,10 @@ class TableRankingActor extends Actor {
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) => {
       println("response received")
-      println(headers)
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         println("Got response, body: " + body.utf8String)
+        val obj = JSON.parseFull(body.utf8String)
+        val a = 2
       }
     }
   }
