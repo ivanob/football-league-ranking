@@ -6,6 +6,7 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import beans.Team
+import services.JsonFootballParser
 
 class TeamActor extends Actor {
   import akka.pattern.pipe
@@ -21,7 +22,8 @@ class TeamActor extends Actor {
       //This actor will retrieve the ages of the players for the team received
       http.singleRequest(HttpRequest(uri = url + t.id + "?api_token=" + token)).map((resp:HttpResponse) =>
         resp.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-          System.out.println(body.utf8String)
+          val source = body.utf8String
+          JsonFootballParser.parseTeamCall(source)
         }
       )
     }
