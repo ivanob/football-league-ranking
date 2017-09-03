@@ -4,6 +4,7 @@ import beans.{Player, Team}
 import spray.json.{JsArray, JsValue}
 import spray.json._
 import DefaultJsonProtocol._
+import spray.json.JsonParser.ParsingException
 
 class JsonFootballParser
 
@@ -28,15 +29,23 @@ object JsonFootballParser{
   }
 
   def parseTeamCall(json: String): List[Player] = {
-    val jsonAst: JsValue = json.parseJson
+    try{
+      val jsonAst: JsValue = json.parseJson
 
-    val a: JsValue = (jsonAst.asJsObject).fields.get("data").get
-    val b = a.asInstanceOf[JsArray].elements
+      val a: JsValue = (jsonAst.asJsObject).fields.get("data").get
+      val b = a.asInstanceOf[JsArray].elements
 
-    b.map((x:JsValue) =>{
-      val stats = x.asJsObject.fields
-      val dateBirth = if(stats("birth_date")!=null) stats("birth_date").convertTo[String]
-      Player(dateBirth)
-    }).toList
+      b.map((x:JsValue) => {
+        val stats = x.asJsObject.fields
+        val birthDate = stats("birth_date")
+        val strBirthDate = birthDate match {
+          case JsNull => None
+          case s: JsString => Some(s.convertTo[String])
+        }
+        Player(strBirthDate)
+      }).toList
+    }catch{
+      case ex: ParsingException => Nil
+    }
   }
 }
