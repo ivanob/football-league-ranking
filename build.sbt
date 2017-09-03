@@ -8,7 +8,9 @@ lazy val V = new {
   val `akka-http` = "10.0.9"
 }
 
+
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.19",
-  "com.typesafe.akka" %% "akka-http" % V.`akka-http`
+  "com.typesafe.akka" %% "akka-http" % V.`akka-http`,
+  "io.spray" %%  "spray-json" % "1.3.3"
 )

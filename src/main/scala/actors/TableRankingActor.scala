@@ -7,8 +7,10 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
-
-import scala.util.parsing.json._
+import spray.json._
+import DefaultJsonProtocol._
+import beans.Team
+import services.JsonFootballParser
 
 class TableRankingActor extends Actor {
   import akka.pattern.pipe
@@ -30,9 +32,14 @@ class TableRankingActor extends Actor {
     }
     case HttpResponse(StatusCodes.OK, headers, entity, _) => {
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-        val obj: Option[Any] = JSON.parseFull(body.utf8String)
-        val globalMap = obj.get.asInstanceOf[Map[String, Any]]
-        System.out.println(globalMap.get("data").get)
+        val teams: List[Team] = JsonFootballParser.parseLeagueCall(body.utf8String)
+      /*  val source = body.utf8String
+        val jsonAst: JsValue = source.parseJson
+       val a = jsonAst\"data"
+        //val obj: Option[Any] = JSON.parseFull(body.utf8String)
+
+        System.out.println(body.utf8String)*/
+
         val teamActor = system.actorOf(Props[TeamActor], "team-actor")
         teamActor ! GetInfoTeam
       }

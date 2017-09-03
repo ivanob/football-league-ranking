@@ -1,6 +1,6 @@
 package beans
 
 
-class Player(age:Int){
+case class Player(age:Int){
 
 }
