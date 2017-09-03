@@ -14,6 +14,7 @@ import services.JsonFootballParser
 class TableRankingActor extends Actor {
   import akka.pattern.pipe
   import context.dispatcher
+  val DELAY_BETWEEN_CALLS_MS = 300
 
   final implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
   val http = Http(context.system)
@@ -33,10 +34,10 @@ class TableRankingActor extends Actor {
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
         val source = body.utf8String
         val teams: List[Team] = JsonFootballParser.parseLeagueCall(source)
-
         //For each team, I have to retrieve the list of ages of its players
         teams.map((t:Team) => {
           val teamActor = system.actorOf(Props[TeamActor])
+          Thread.sleep(DELAY_BETWEEN_CALLS_MS)
           teamActor ! GetInfoTeamPlayers(t)
         })
 
