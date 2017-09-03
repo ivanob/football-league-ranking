@@ -1,17 +1,18 @@
 package actors
-import actors.TeamActor.GetInfoTeam
+import actors.TeamActor.GetInfoTeamPlayers
 import akka.actor.Actor
+import beans.Team
 
 class TeamActor extends Actor {
 
   def receive = {
-    case GetInfoTeam => {
-      System.out.println("Llega al info team")
+    case GetInfoTeamPlayers(t:Team) => {
+      System.out.println("Llega al info team " + t.name)
     }
   }
 }
 
 object TeamActor {
   sealed trait TeamMsg
-  case object GetInfoTeam extends TeamMsg
+  case class GetInfoTeamPlayers(t:Team) extends TeamMsg
 }

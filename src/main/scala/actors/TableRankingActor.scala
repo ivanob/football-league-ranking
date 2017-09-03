@@ -1,14 +1,13 @@
 package actors
 
 import actors.TableRankingActor.CalculateTable
-import actors.TeamActor.GetInfoTeam
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
-import spray.json._
-import DefaultJsonProtocol._
+
+import actors.TeamActor.GetInfoTeamPlayers
 import beans.Team
 import services.JsonFootballParser
 
@@ -35,8 +34,12 @@ class TableRankingActor extends Actor {
         val source = body.utf8String
         val teams: List[Team] = JsonFootballParser.parseLeagueCall(source)
 
-        val teamActor = system.actorOf(Props[TeamActor], "team-actor")
-        teamActor ! GetInfoTeam
+        //For each team, I have to retrieve the list of ages of its players
+        teams.map((t:Team) => {
+          val teamActor = system.actorOf(Props[TeamActor])
+          teamActor ! GetInfoTeamPlayers(t)
+        })
+
       }
     }
   }

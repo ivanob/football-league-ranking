@@ -2,6 +2,8 @@ package services
 
 import beans.Team
 import spray.json.{JsArray, JsValue}
+import spray.json._
+import DefaultJsonProtocol._
 
 class JsonFootballParser
 
@@ -22,6 +24,6 @@ object JsonFootballParser{
       val id = stats("team").asJsObject.fields("id").convertTo[Int]
       val name = stats("team").asJsObject.fields("name").convertTo[String]
       Team(id,name,points,goalsScored,goalsConceded)
-    })
+    }).toList
   }
 }
