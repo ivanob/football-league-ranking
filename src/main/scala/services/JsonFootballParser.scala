@@ -35,7 +35,7 @@ object JsonFootballParser{
 
     b.map((x:JsValue) =>{
       val stats = x.asJsObject.fields
-      val dateBirth = stats("birth_date").convertTo[String]
+      val dateBirth = if(stats("birth_date")!=null) stats("birth_date").convertTo[String]
       Player(dateBirth)
     }).toList
   }
