@@ -28,6 +28,15 @@ object JsonFootballParser{
   }
 
   def parseTeamCall(json: String): List[Player] = {
-    return Nil
+    val jsonAst: JsValue = json.parseJson
+
+    val a: JsValue = (jsonAst.asJsObject).fields.get("data").get
+    val b = a.asInstanceOf[JsArray].elements
+
+    b.map((x:JsValue) =>{
+      val stats = x.asJsObject.fields
+      val dateBirth = stats("birth_date").convertTo[String]
+      Player(dateBirth)
+    }).toList
   }
 }
