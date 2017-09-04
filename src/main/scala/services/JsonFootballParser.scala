@@ -40,7 +40,9 @@ object JsonFootballParser{
         val birthDate = stats("birth_date")
         val strBirthDate = birthDate match {
           case JsNull => None
-          case s: JsString => Some(s.convertTo[String])
+          case s: JsString => {
+            if(s.value.compareTo("")==0) None else Some(s.value)
+          }
         }
         Player(strBirthDate)
       }).toList

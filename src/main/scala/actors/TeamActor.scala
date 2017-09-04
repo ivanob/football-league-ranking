@@ -1,7 +1,7 @@
 package actors
 import actors.TableRankingActor.ResultTeamPlayers
 import actors.TeamActor.GetInfoTeamPlayers
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
@@ -19,14 +19,24 @@ class TeamActor extends Actor {
   val http = Http(context.system)
 
   def receive = {
-    case GetInfoTeamPlayers(t:Team) => {
-      val replyTo = sender()
+    case GetInfoTeamPlayers(t:Team, sendTo:ActorRef) => {
+
       //This actor will retrieve the ages of the players for the team received
       http.singleRequest(HttpRequest(uri = url + t.id + "?api_token=" + token)).map((resp:HttpResponse) =>
-        resp.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-          val source = body.utf8String
-          val players: List[Player] = JsonFootballParser.parseTeamCall(source)
-          replyTo ! ResultTeamPlayers(players)
+        resp match {
+          case HttpResponse(StatusCodes.OK, _, _, _) => {
+            resp.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+              val source = body.utf8String
+              val players: List[Player] = JsonFootballParser.parseTeamCall(source)
+              System.out.println("FINISHED THREAD, List: " + players.length)
+              sendTo ! ResultTeamPlayers(players)
+            }
+          }
+          case HttpResponse(_, _, _, _) => {
+            val r = scala.util.Random
+            Thread.sleep(r.nextInt(2000))
+            self ! GetInfoTeamPlayers(t, sendTo)
+          }
         }
       )
     }
@@ -35,5 +45,5 @@ class TeamActor extends Actor {
 
 object TeamActor {
   sealed trait TeamMsg
-  case class GetInfoTeamPlayers(t:Team) extends TeamMsg
+  case class GetInfoTeamPlayers(t:Team, sendTo:ActorRef) extends TeamMsg
 }

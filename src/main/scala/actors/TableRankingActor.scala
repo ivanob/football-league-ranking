@@ -14,7 +14,6 @@ class TableRankingActor extends Actor {
   import akka.pattern.pipe
   import context._
   import concurrent.duration._
-  val DELAY_BETWEEN_CALLS_MS = 400
 
   final implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
   val http = Http(context.system)
@@ -37,8 +36,7 @@ class TableRankingActor extends Actor {
         //For each team, I have to retrieve the list of ages of its players
         teams.map((t:Team) => {
           val teamActor = system.actorOf(Props[TeamActor])
-          Thread.sleep(DELAY_BETWEEN_CALLS_MS)
-          teamActor ! GetInfoTeamPlayers(t)
+          teamActor ! GetInfoTeamPlayers(t, self)
         })
         setReceiveTimeout(3 seconds) //Timeout I will wait to receive all responses
         context.become(waitingForResponses(teams.length))
@@ -49,8 +47,9 @@ class TableRankingActor extends Actor {
   //This function handles the wait for N responses from the TeamActors
   def waitingForResponses(numTeams: Int): Receive = {
     case ResultTeamPlayers(players: List[Player]) => {
-      System.out.println("ARRIVED")
+      System.out.println("ARRIVED, responses: " + numTeams)
       //context stop self
+      become(waitingForResponses(numTeams-1))
     }
     case ReceiveTimeout => {
       context stop self
