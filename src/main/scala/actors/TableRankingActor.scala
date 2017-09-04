@@ -8,7 +8,7 @@ import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import actors.TeamActor.GetInfoTeamPlayers
 import beans.{Player, Team}
-import services.JsonFootballParser
+import services.{JsonFootballParser, ScoringAlgorithm}
 
 class TableRankingActor extends Actor {
   import akka.pattern.pipe
@@ -39,17 +39,28 @@ class TableRankingActor extends Actor {
           teamActor ! GetInfoTeamPlayers(t, self)
         })
         setReceiveTimeout(3 seconds) //Timeout I will wait to receive all responses
-        context.become(waitingForResponses(teams.length))
+        context.become(waitingForResponses(teams.length-1, teams))
       }
     }
   }
 
   //This function handles the wait for N responses from the TeamActors
-  def waitingForResponses(numTeams: Int): Receive = {
-    case ResultTeamPlayers(players: List[Player]) => {
-      System.out.println("ARRIVED, responses: " + numTeams)
-      //context stop self
-      become(waitingForResponses(numTeams-1))
+  def waitingForResponses(numTeams: Int, teams: List[Team]): Receive = {
+    case ResultTeamPlayers(players: List[Player], team: Team) => {
+      if(numTeams == 0) {
+        //System.out.println("Finished")
+        val newTeam: Team = Team(team.id, team.name, team.points, team.goalsScored, team.goalsConceded, players)
+        val finalTable = (teams diff List(team)):::List(newTeam)
+        //Order teams following the new ranking algorithm
+        val orderedTable:List[(Team,Float)] = ScoringAlgorithm.orderByRanking(finalTable)
+        orderedTable.map(x => {
+          System.out.println("- Team: " + x._1.name + ", Score: " + x._2)
+        })
+        context stop self
+      }else {
+        val newTeam: Team = Team(team.id, team.name, team.points, team.goalsScored, team.goalsConceded, players)
+        become(waitingForResponses(numTeams-1, (teams diff List(team)):::List(newTeam)))
+      }
     }
     case ReceiveTimeout => {
       context stop self
@@ -60,6 +71,6 @@ class TableRankingActor extends Actor {
 object TableRankingActor {
   sealed trait TableMsg
   case object CalculateTable extends TableMsg
-  case class ResultTeamPlayers(players: List[Player]) extends TableMsg
+  case class ResultTeamPlayers(players: List[Player], team: Team) extends TableMsg
 
 }

@@ -28,8 +28,8 @@ class TeamActor extends Actor {
             resp.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
               val source = body.utf8String
               val players: List[Player] = JsonFootballParser.parseTeamCall(source)
-              System.out.println("FINISHED THREAD, List: " + players.length)
-              sendTo ! ResultTeamPlayers(players)
+              //System.out.println("FINISHED THREAD, List: " + players.length)
+              sendTo ! ResultTeamPlayers(players, t)
             }
           }
           case HttpResponse(_, _, _, _) => {
